@@ -17,8 +17,10 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-# install boto3
-RUN pip3 install boto3
+RUN mkdir /jd2cw
+WORKDIR /jd2cw
+COPY . /jd2cw/
+RUN pip3 install -e "."
 
-COPY main.py /main.py
-ENTRYPOINT ["python3", "/main.py"]
+ENTRYPOINT ["jd2cw"]
+CMD ["--help"]
