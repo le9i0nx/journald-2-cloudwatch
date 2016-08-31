@@ -1,3 +1,4 @@
+import re
 import urllib.request
 import json
 import uuid
@@ -22,6 +23,9 @@ class JournalMsgEncoder(json.JSONEncoder):
             return str(obj)
         return super().default(obj)
 
+seq_token_finder = re.compile('\d{16,}').search
+
+
 class CloudWatchClient:
     ALREADY_EXISTS = 'ResourceAlreadyExistsException'
     THROTTLED = 'ThrottlingException'
@@ -31,6 +35,7 @@ class CloudWatchClient:
         self.client = boto3.client('logs')
         self.cursor_path = cursor_path
         self.create_log_group()
+        self.seq_tokens = {}
 
     def create_log_group(self):
         ''' create a log group, ignoring if it exists '''
@@ -79,17 +84,39 @@ class CloudWatchClient:
 
     def put_log_messages(self, log_stream, messages):
         ''' log the message to cloudwatch '''
-        seq_token = self.get_seq_token(log_stream)
+        try:
+            seq_token = self.seq_tokens[log_stream]
+        except KeyError:
+            seq_token = self.get_seq_token(log_stream)
 
         kwargs = (dict(sequenceToken=seq_token) if seq_token else {})
         log_events = list(map(self.make_message, messages))
 
-        self.client.put_log_events(
-            logGroupName=log_group,
-            logStreamName=log_stream,
-            logEvents=log_events,
-            **kwargs
-        )
+        MAX_RETRY = 5
+        counter = 0
+        while True:
+            try:
+                response = self.client.put_log_events(
+                    logGroupName=log_group,
+                    logStreamName=log_stream,
+                    logEvents=log_events,
+                    **kwargs
+                )
+            except botocore.exceptions.ClientError as err:
+                if err.response['Error']['Code'] == 'InvalidSequenceTokenException':
+                    # the error message is giving us the expected token
+                    seq_token = seq_token_finder(err.response['Error']['Message']).group(0)
+                    kwargs['sequenceToken'] = seq_token
+                    counter += 1
+                    if counter > MAX_RETRY:
+                        sleep(.1)
+                        seq_token = self.get_seq_token(log_stream)
+                        counter = 0
+                else:
+                    raise err
+            else:
+                break
+        self.seq_tokens[log_stream] = response['nextSequenceToken']
 
     def group_messages(self, messages, maxlen=10, timespan=datetime.timedelta(hours=23)):
         '''
