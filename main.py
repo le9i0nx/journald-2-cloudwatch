@@ -30,8 +30,9 @@ class CloudWatchClient:
     ALREADY_EXISTS = 'ResourceAlreadyExistsException'
     THROTTLED = 'ThrottlingException'
 
-    def __init__(self, log_group, cursor_path):
+    def __init__(self, log_group, cursor_path, retention):
         self.log_group = log_group
+        self.retention = retention
         self.client = boto3.client('logs')
         self.cursor_path = cursor_path
         self.create_log_group()
@@ -44,6 +45,11 @@ class CloudWatchClient:
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] != self.ALREADY_EXISTS:
                 raise
+        else:
+            if self.retention > 0:
+                self.client.put_retention_policy(
+                    logGroupName=self.log_group,
+                    retentionInDays=self.retention)
 
     def create_log_stream(self, log_stream):
         ''' create a log stream, ignoring if it exists '''
@@ -196,6 +202,10 @@ if __name__ == '__main__':
                        help='Log group prefix (default is blank). Log group will be {prefix}_{instance_id}')
     group.add_argument('--log-group',
                        help='Name of the log group to use')
+    parser.add_argument('--retention', type=int, default=0,
+                        help='Set retention duration of log_group in days.'
+                        ' Only when log group is created.'
+                        ' %(default)s means infinite')
     args = parser.parse_args()
 
     if args.log_group:
@@ -205,7 +215,7 @@ if __name__ == '__main__':
         if args.prefix:
             log_group = '{}_{}'.format(args.prefix, log_group)
 
-    client = CloudWatchClient(log_group, args.cursor)
+    client = CloudWatchClient(log_group, args.cursor, args.retention)
 
     while True:
         cursor = client.load_cursor()
