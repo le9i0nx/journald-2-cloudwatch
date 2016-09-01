@@ -1,21 +1,24 @@
 language: python
+dist: trusty
+sudo: required
 
 python:
     - "3.5"
 
-sudo: false
+env:
+    global:
+        - AWS_DEFAULT_REGION=eu-west-1
 
 cache:
     - apt
 
-addons:
-    apt:
-        packages:
-            - libsystemd-journal-dev
+before_install:
+    - "sudo apt-get -qq update"
+    - "sudo apt-get install python3-dev gcc pkg-config libsystemd-journal-dev libsystemd-daemon-dev libsystemd-login-dev"
 
 install:
     - "pip install git+https://github.com/systemd/python-systemd.git/@v231#egg=systemd"
-    - "pip install pytest-cov codecov"
+    - "pip install pytest pytest-cov codecov requests_mock"
     - "pip install -e ."
 
 script:
