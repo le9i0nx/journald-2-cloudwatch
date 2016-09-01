@@ -41,17 +41,19 @@ def main():
 
     client = CloudWatchClient(log_group, args.cursor, args.retention)
 
-    while True:
-        cursor = client.load_cursor()
-        with systemd.journal.Reader(path=args.logs) as reader:
-            if cursor:
-                reader.seek_cursor(cursor)
-            else:
-                # no cursor, start from start of this boot
-                reader.this_boot()
-                reader.seek_head()
+    cursor = client.load_cursor()
+    with systemd.journal.Reader(path=args.logs) as reader:
+        if cursor:
+            reader.seek_cursor(cursor)
+        else:
+            # no cursor, start from start of this boot
+            reader.this_boot()
+            reader.seek_head()
 
-            reader = filter(CloudWatchClient.retain_message, reader)
+        while True:
             for log_stream, messages in itertools.groupby(
-                    reader, key=client.log_stream_for):
+                    filter(CloudWatchClient.retain_message, reader),
+                    key=client.log_stream_for):
                 client.log_messages(log_stream, list(messages))
+            else:
+                reader.wait(.1)
