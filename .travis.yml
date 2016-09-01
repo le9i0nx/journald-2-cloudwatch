@@ -15,10 +15,14 @@ addons:
 
 install:
     - "pip install git+https://github.com/systemd/python-systemd.git/@v231#egg=systemd"
+    - "pip install pytest-cov codecov"
     - "pip install -e ."
 
 script:
-    - "pytest"
+    - "pytest --cov=jd2cw"
+
+after_success:
+    - bash <(curl -s https://codecov.io/bash)
 
 notifications:
     email: false
