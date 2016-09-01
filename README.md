@@ -1,20 +1,20 @@
 # journald-2-cloudwatch
 Send journald logs to AWS CloudWatch
 
-Available on Docker Hub: https://hub.docker.com/r/lincheney/journald-2-cloudwatch/
+[![Docker Repository on Quay](https://quay.io/repository/lock8/journald-2-cloudwatch/status "Docker Repository on Quay")](https://quay.io/repository/lock8/journald-2-cloudwatch)
 
 This is heavily based on https://github.com/arkenio/journald-wrapper.
 
 ## Running in Docker
 
 ```bash
-docker run -e AWS_DEFAULT_REGION=ap-southeast-2 -v /var/log/journal/:/var/log/journal/:ro -v /data/journald:/data/journald/:rw lincheney/journald-2-cloudwatch --cursor=/data/journald/cursor
+docker run -e AWS_DEFAULT_REGION=ap-southeast-2 -v /var/log/journal/:/var/log/journal/:ro -v /data/journald:/data/journald/:rw quay.io/lock8/journald-2-cloudwatch --cursor=/data/journald/cursor
 ```
 
 If journald is configured with `"volatile"` `Storage` then the command will be:
 
 ```bash
-docker run -e AWS_DEFAULT_REGION=ap-southeast-2 -v /run/log/journal/:/var/log/journal/:ro -v /data/journald:/data/journald/:rw lincheney/journald-2-cloudwatch --cursor=/data/journald/cursor
+docker run -e AWS_DEFAULT_REGION=ap-southeast-2 -v /run/log/journal/:/var/log/journal/:ro -v /data/journald:/data/journald/:rw quay.io/lock8/journald-2-cloudwatch --cursor=/data/journald/cursor
 ```
 
 Note the host mount point `/run/log/journal/`.
