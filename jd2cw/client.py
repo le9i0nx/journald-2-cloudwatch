@@ -15,6 +15,8 @@ class JournalMsgEncoder(json.JSONEncoder):
             return obj.timestamp()
         if isinstance(obj, uuid.UUID):
             return str(obj)
+        if isinstance(obj, bytes):
+            return obj.decode('utf-8')
         return super().default(obj)
 
 
@@ -83,7 +85,8 @@ class CloudWatchClient:
         timestamp = int(message['__REALTIME_TIMESTAMP'].timestamp() * 1000)
         # remove unserialisable values
         message = {k: v for k, v in message.items() if
-                   isinstance(v, (str, int, uuid.UUID, datetime.datetime))}
+                   isinstance(v, (str, int, float, bytes,
+                                  uuid.UUID, datetime.datetime))}
         # encode entire message in json
         message = json.dumps(message, cls=JournalMsgEncoder)
         return dict(timestamp=timestamp, message=message)

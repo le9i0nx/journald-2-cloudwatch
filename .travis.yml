@@ -1,0 +1,28 @@
+language: python
+
+python:
+    - "3.5"
+
+sudo: false
+
+cache:
+    - apt
+
+addons:
+    apt:
+        packages:
+            - libsystemd-journal-dev
+
+install:
+    - "pip install git+https://github.com/systemd/python-systemd.git/@v231#egg=systemd"
+    - "pip install pytest-cov codecov"
+    - "pip install -e ."
+
+script:
+    - "pytest --cov=jd2cw"
+
+after_success:
+    - bash <(curl -s https://codecov.io/bash)
+
+notifications:
+    email: false
