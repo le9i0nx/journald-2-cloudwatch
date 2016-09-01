@@ -1,6 +1,7 @@
 # journald-2-cloudwatch
 Send journald logs to AWS CloudWatch
 
+[![Build Status](https://travis-ci.org/lock8/journald-2-cloudwatch.svg?branch=master)](https://travis-ci.org/lock8/journald-2-cloudwatch)
 [![Docker Repository on Quay](https://quay.io/repository/lock8/journald-2-cloudwatch/status "Docker Repository on Quay")](https://quay.io/repository/lock8/journald-2-cloudwatch)
 
 This is heavily based on https://github.com/arkenio/journald-wrapper.

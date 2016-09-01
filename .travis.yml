@@ -1,0 +1,24 @@
+language: python
+
+python:
+    - "3.5"
+
+sudo: false
+
+cache:
+    - apt
+
+addons:
+    apt:
+        packages:
+            - libsystemd-journal-dev
+
+install:
+    - "pip install git+https://github.com/systemd/python-systemd.git/@v231#egg=systemd"
+    - "pip install -e ."
+
+script:
+    - "pytest"
+
+notifications:
+    email: false
