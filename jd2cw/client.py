@@ -27,16 +27,25 @@ class CloudWatchClient:
     ALREADY_EXISTS = 'ResourceAlreadyExistsException'
     THROTTLED = 'ThrottlingException'
 
-    def __init__(self, log_group, cursor_path, retention):
+    def __init__(self, log_group, cursor_path, retention,
+                 subscription_filter_config):
         self.log_group = log_group
         self.retention = retention
         self.client = boto3.client('logs')
         self.cursor_path = cursor_path
-        self.create_log_group()
+        self.subscription_filter_config = subscription_filter_config
         self.seq_tokens = {}
+        self.configured = False
+
+    def configure(self):
+        self.create_log_group()
+        self.configured = True
 
     def create_log_group(self):
-        ''' create a log group, ignoring if it exists '''
+        '''create a log group, ignoring if it exists.
+        If a subscription filter is required create it also,
+        only during creation_time of log_group.
+        '''
         try:
             self.client.create_log_group(logGroupName=self.log_group)
         except botocore.exceptions.ClientError as e:
@@ -47,6 +56,22 @@ class CloudWatchClient:
                 self.client.put_retention_policy(
                     logGroupName=self.log_group,
                     retentionInDays=self.retention)
+            if self.subscription_filter_config:
+                destination_arn = self.subscription_filter_config[
+                    'destinationArn']
+                if destination_arn.split(':', 3)[2] == 'lambda':
+                    # if subscription is a lambda we need to set proper,
+                    # permission to cloudwatch.
+                    lambda_client = boto3.client('lambda')
+                    lambda_client.add_permission(
+                        FunctionName=destination_arn,
+                        StatementId='permission_{}'.format(self.log_group),
+                        Action='lambda:Invoke',
+                        Principal='logs.{}.amazonaws.com'.format(
+                            self.client.meta.config.region_name),
+                    )
+                self.client.put_subscription_filter(
+                    **self.subscription_filter_config)
 
     def create_log_stream(self, log_stream):
         ''' create a log stream, ignoring if it exists '''
@@ -148,6 +173,9 @@ class CloudWatchClient:
             messages = messages[len(group):]
 
     def log_messages(self, log_stream, messages):
+        if not self.configured:
+            raise RuntimeError
+
         for chunk in self.group_messages(messages):
             self._log_messages(log_stream, chunk)
 

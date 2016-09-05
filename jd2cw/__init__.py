@@ -21,6 +21,11 @@ def print_version(ctx, param, value):
     click.echo('Version {}'.format(version))
     ctx.exit()
 
+python_aws_mapping = {'destination_arn': 'destinationArn',
+                      'filter_name': 'filterName',
+                      'filter_pattern': 'filterPattern',
+                      'role_arn': 'roleArn'}
+
 
 @click.command()
 @click.option('--cursor', help='Store/read the journald cursor in this file')
@@ -59,6 +64,15 @@ def main(cursor, logs, prefix, log_group, retention, config):
                 log_group = '{}_{}'.format(prefix, log_group)
         log_group = log_group
         retention = int(section.get('retention', 0))
+        subscription_filter_config = {}
+        try:
+            subscription_filter_section = config_['subscription-filter']
+        except KeyError:
+            pass
+        else:
+            subscription_filter_config['logGroupName'] = log_group
+            for k, v in subscription_filter_section.items():
+                subscription_filter_config[python_aws_mapping[k]] = v
     else:
         cursor = cursor
         logs = logs
@@ -68,8 +82,11 @@ def main(cursor, logs, prefix, log_group, retention, config):
             log_group = '{}_{}'.format(prefix, log_group)
         log_group = log_group
         retention = int(retention)
+        subscription_filter_config = {}
 
-    client = CloudWatchClient(log_group, cursor, retention)
+    client = CloudWatchClient(log_group, cursor, retention,
+                              subscription_filter_config)
+    client.configure()
 
     cursor = client.load_cursor()
     with systemd.journal.Reader(path=logs) as reader:
