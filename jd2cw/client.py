@@ -26,6 +26,7 @@ seq_token_finder = re.compile('\d{16,}').search
 class CloudWatchClient:
     ALREADY_EXISTS = 'ResourceAlreadyExistsException'
     THROTTLED = 'ThrottlingException'
+    CONFLICT = 'ResourceConflictException'
 
     def __init__(self, log_group, cursor_path, retention,
                  subscription_filter_config):
@@ -63,13 +64,17 @@ class CloudWatchClient:
                     # if subscription is a lambda we need to set proper,
                     # permission to cloudwatch.
                     lambda_client = boto3.client('lambda')
-                    lambda_client.add_permission(
-                        FunctionName=destination_arn,
-                        StatementId='permission_{}'.format(self.log_group),
-                        Action='lambda:Invoke',
-                        Principal='logs.{}.amazonaws.com'.format(
-                            self.client.meta.config.region_name),
-                    )
+                    try:
+                        lambda_client.add_permission(
+                            FunctionName=destination_arn,
+                            StatementId='permission_{}'.format(self.log_group),
+                            Action='lambda:Invoke',
+                            Principal='logs.{}.amazonaws.com'.format(
+                                self.client.meta.config.region_name),
+                        )
+                    except botocore.exceptions.ClientError as e:
+                        if e.response['Error']['Code'] != self.CONFLICT:
+                            raise e
                 self.client.put_subscription_filter(
                     **self.subscription_filter_config)
 
