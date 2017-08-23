@@ -19,7 +19,8 @@ RUN BUILD_DEPS="curl python3-dev pkg-config \
 
 RUN mkdir /jd2cw
 WORKDIR /jd2cw
-COPY . /jd2cw/
+COPY jd2cw /jd2cw/jd2cw
+COPY setup.py /jd2cw/
 RUN pip3 install -e "."
 
 ENTRYPOINT ["jd2cw"]
