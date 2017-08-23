@@ -2,6 +2,10 @@ FROM debian:stretch-slim
 
 VOLUME /etc/jd2cw/
 
+# For click.
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
+
 # Install Python, pip, boto3 and python-systemd.
 RUN BUILD_DEPS="curl python3-dev pkg-config \
       gcc git libsystemd-dev" \
