@@ -2,3 +2,9 @@
 *.egg-info/
 *.md
 LICENCE
+.travis.yml
+Dockerfile
+Dockerfile.test
+Makefile
+.dockerignore
+__pycache__
