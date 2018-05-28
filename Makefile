@@ -12,5 +12,6 @@ docker_test: docker_build_test
 	  -e AWS_DEFAULT_REGION=eu-west-1 \
 	  -e AWS_ACCESS_KEY_ID=abc \
 	  -e AWS_SECRET_ACCESS_KEY=abc \
-		-w $$CODECOV_TMP \
+	  -w $$CODECOV_TMP \
 	  journald-2-cloudwatch-test
+	docker run --rm journald-2-cloudwatch
