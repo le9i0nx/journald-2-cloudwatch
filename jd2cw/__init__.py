@@ -21,6 +21,7 @@ def print_version(ctx, param, value):
     click.echo('Version {}'.format(version))
     ctx.exit()
 
+
 python_aws_mapping = {'destination_arn': 'destinationArn',
                       'filter_name': 'filterName',
                       'filter_pattern': 'filterPattern',

@@ -20,7 +20,7 @@ class JournalMsgEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-seq_token_finder = re.compile('\d{16,}').search
+seq_token_finder = re.compile(r'\d{16,}').search
 
 
 class CloudWatchClient:
