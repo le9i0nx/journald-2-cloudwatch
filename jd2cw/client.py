@@ -113,10 +113,12 @@ class CloudWatchClient:
     def make_message(self, message):
         ''' prepare a message to send to cloudwatch '''
         timestamp = int(message['__REALTIME_TIMESTAMP'].timestamp() * 1000)
-        # remove unserialisable values
-        message = {k: v for k, v in message.items() if
-                   isinstance(v, (str, int, float, bytes,
-                                  uuid.UUID, datetime.datetime))}
+        # Keep only serializable values, and remove __CURSOR, which is not
+        # useful, and rather long.
+        message = {k: v for k, v in message.items()
+                   if k != '__CURSOR'
+                   and isinstance(v, (str, int, float, bytes,
+                                      uuid.UUID, datetime.datetime))}
         # encode entire message in json
         message = json.dumps(message, cls=JournalMsgEncoder)
         return dict(timestamp=timestamp, message=message)
